@@ -1,8 +1,9 @@
 import sqlite3
 import flask
-import werkzeug
+import werkzeug.exceptions
 
 app = flask.Flask(__name__)
+app.config['SECRET_KEY'] = 'my secret key'
 
 def get_db_conn():
     conn = sqlite3.connect("database.db")
@@ -15,7 +16,7 @@ def get_post(post_id):
         (post_id,)).fetchone()
     conn.close()
     if post is None:
-        werkzeug.abort(404)
+        werkzeug.exceptions.abort(404)
     return post
 
 @app.route("/")
@@ -30,3 +31,21 @@ def show_index():
 def show_post(post_id):
     post = get_post(post_id)
     return flask.render_template("post.html", post=post)
+
+@app.route("/create", methods=("GET", "POST"))
+def create_post():
+    if flask.request.method == "POST":
+        title = flask.request.form['title']
+        content = flask.request.form['content']
+
+        if not title:
+            flask.flash("Title is required!")
+        else:
+            conn = get_db_conn()
+            conn.execute("INSERT INTO posts (title, content) VALUES (?, ?)",
+                (title, content))
+            conn.commit()
+            conn.close()
+            return flask.redirect(flask.url_for("show_index"))
+
+    return flask.render_template('create.html')
