@@ -51,6 +51,16 @@ def edit_post(post_id):
 
     return flask.render_template("edit.html", post=post)
 
+@app.route("/posts/<int:post_id>/delete", methods=("POST",))
+def delete_post(post_id):
+    post = get_post(post_id)
+    conn = get_db_conn()
+    conn.execute("DELETE FROM posts WHERE id = ?", (post_id,))
+    conn.commit()
+    conn.close()
+    flask.flash("%s was successfully deleted." % post['title'])
+    return flask.redirect(flask.url_for("show_index"))
+
 @app.route("/create", methods=("GET", "POST"))
 def create_post():
     if flask.request.method == "POST":
