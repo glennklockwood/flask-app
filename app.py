@@ -32,6 +32,25 @@ def show_post(post_id):
     post = get_post(post_id)
     return flask.render_template("post.html", post=post)
 
+@app.route("/posts/<int:post_id>/edit", methods=("GET", "POST"))
+def edit_post(post_id):
+    post = get_post(post_id)
+
+    if flask.request.method == "POST":
+        title = flask.request.form["title"]
+        content = flask.request.form["content"]
+        if not title:
+            flask.flash("Title is required!")
+        else:
+            conn = get_db_conn()
+            conn.execute("UPDATE posts SET title = ?, content = ? WHERE id = ?",
+                (title, content, post_id))
+            conn.commit()
+            conn.close()
+            return flask.redirect(flask.url_for("show_index"))
+
+    return flask.render_template("edit.html", post=post)
+
 @app.route("/create", methods=("GET", "POST"))
 def create_post():
     if flask.request.method == "POST":
